@@ -11,6 +11,10 @@
 2，运行scan.sh开始扫描并保持扫描结果Xml
 3，运行Goscanpro读取XMl 并进行扫描
 
+```
+go run main.go -nFile nmapOutXml/123.56.102.89.xml
+
+```
 
 - [x] FTP
 - [x] mongodb
