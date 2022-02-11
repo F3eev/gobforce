@@ -12,6 +12,19 @@
 3，运行Goscanpro读取XMl 并进行扫描
 
 
+- [x] FTP
+- [x] mongodb
+- [x] mysql
+- [x] postgres
+- [x] rdp
+- [x] redis
+- [x] ssh
+- [x] vnc
+
+
+## to do
+- rdp优化 
+
 ## update log
 
 ### 2022.2.11
