@@ -1,8 +1,8 @@
 package scan
 
 import (
-	"github.com/F3eev/Goscanpro/brute"
-	"github.com/F3eev/Goscanpro/lib"
+	"github.com/F3eev/gobfroce/brute"
+	"github.com/F3eev/gobfroce/lib"
 	"github.com/panjf2000/ants"
 	"io"
 	"log"

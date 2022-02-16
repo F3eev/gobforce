@@ -1,3 +1,5 @@
+github.com/F3eev/Goscanpro v0.0.0-20220216014433-277756ab19d3 h1:qSuEZDnOmhLRei/Ecs8LRTHf/5MqmLA13LJT05Fz2y0=
+github.com/F3eev/Goscanpro v0.0.0-20220216014433-277756ab19d3/go.mod h1:PW6B924ZYogz/BrteYby23g0pEXnXbBGu83GWnK5Y0Q=
 github.com/garyburd/redigo v1.6.3 h1:HCeeRluvAgMusMomi1+6Y5dmFOdYV/JzoRrrbFlkGIc=
 github.com/garyburd/redigo v1.6.3/go.mod h1:rTb6epsqigu3kYKBnaF028A7Tf/Aw5s0cqA47doKKqw=
 github.com/go-sql-driver/mysql v1.6.0 h1:BCTh4TKNUYmOmMUcQ3IipzF5prigylS7XXjEkfCHuOE=

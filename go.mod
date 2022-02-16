@@ -1,8 +1,9 @@
-module github.com/F3eev/Goscanpro
+module github.com/F3eev/gobfroce
 
 go 1.15
 
 require (
+	github.com/F3eev/Goscanpro v0.0.0-20220216014433-277756ab19d3 // indirect
 	github.com/garyburd/redigo v1.6.3
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang/glog v1.0.0 // indirect
