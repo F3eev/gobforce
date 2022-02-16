@@ -1,8 +1,8 @@
 package scan
 
 import (
-	"Goscanpro/brute"
-	"Goscanpro/lib"
+	"github.com/F3eev/Goscanpro/brute"
+	"github.com/F3eev/Goscanpro/lib"
 	"github.com/panjf2000/ants"
 	"io"
 	"log"
@@ -17,8 +17,8 @@ type VScan struct {
 	serviceDictFunction map[string]ServiceDictFunction
 	serviceAction       []string
 	threadNum           int
-	Logger *log.Logger
-	timeout int
+	Logger              *log.Logger
+	timeout             int
 }
 
 type Target struct {
@@ -44,14 +44,14 @@ type ScanPar struct {
 }
 
 var expList = map[string][]string{
-	"ssh":           {"SSHLogin"},
-	"ftp":           {"FTPLogin"},
-	"mongodb":       {"MongoLogin"},
-	"mysql":         {"MysqlLogin"},
-	"postgresql":    {"PostgresLogin"},
+	"ssh":        {"SSHLogin"},
+	"ftp":        {"FTPLogin"},
+	"mongodb":    {"MongoLogin"},
+	"mysql":      {"MysqlLogin"},
+	"postgresql": {"PostgresLogin"},
 	//"ms-wbt-server": {"RdpLogin"},
-	"redis":         {"RedisLogin"},
-	"vnc":           {"VNCLoginNoUser"},
+	"redis": {"RedisLogin"},
+	"vnc":   {"VNCLoginNoUser"},
 }
 
 func getDefaultService() (services []string) {
@@ -85,49 +85,49 @@ func filterService(ArgServices string) []string {
 	return scanServiceList
 }
 
-func Init(threadNum int, services string,dict string,logfile string,timeout int ) *VScan {
+func Init(threadNum int, services string, onlyCustomDict bool, logfile string, timeout int) *VScan {
 	logFile, err := os.OpenFile(logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0766)
-	if err !=nil{
+	if err != nil {
 		log.Printf(":Logfile %s %s\n", logfile, err.Error())
 	}
 	//defer logFile.Close()
-	fileAndPrint := io.MultiWriter(logFile,os.Stdout)
+	fileAndPrint := io.MultiWriter(logFile, os.Stdout)
 	logger := log.New(fileAndPrint, "[BruteForce]", log.LstdFlags)
 	serviceDictFunction := make(map[string]ServiceDictFunction)
-	scanService :=filterService(services)
+	scanService := filterService(services)
 	logger.Printf(":Staring scan thread %d can service:%v ", threadNum, scanService)
 
 	for _, service := range scanService {
 		for _, fun := range expList[service] {
-			dict := loadExpDict(service,dict)
+			dict := loadExpDict(service, onlyCustomDict)
 			logger.Printf(":Load %s dict %d", service, len(dict))
 			factor := ServiceDictFunction{service, dict, fun}
 			serviceDictFunction[service] = factor
 		}
 	}
 
-	return &VScan{serviceDictFunction, scanService, threadNum,logger,timeout}
+	return &VScan{serviceDictFunction, scanService, threadNum, logger, timeout}
 }
 
-func loadExpDict(name string,selectDict string) []DictUserPass {
+func loadExpDict(name string, onlyCustomDict bool) []DictUserPass {
 	var dictUserPass []DictUserPass
 	commonUser := lib.FileRead("dict/common_user.txt")
 	commonPass := lib.FileRead("dict/common_pass.txt")
 	commonCustom := lib.FileRead("dict/common_custom.txt")
 	serviceCustom := lib.FileRead("dict/" + name + "_custom.txt")
-	serverUser := lib.FileRead("dict/"+name+"_user.txt")
-	serverPass := lib.FileRead("dict/"+name+"_password.txt")
+	serverUser := lib.FileRead("dict/" + name + "_user.txt")
+	serverPass := lib.FileRead("dict/" + name + "_password.txt")
 
-    userAll:=lib.RemoveDuplicateElement(append(commonUser, serverUser...))
-	passAll:=lib.RemoveDuplicateElement(append(commonPass, serverPass...))
-	commonAll :=lib.RemoveDuplicateElement(append(commonCustom, serviceCustom...))
+	userAll := lib.RemoveDuplicateElement(append(commonUser, serverUser...))
+	passAll := lib.RemoveDuplicateElement(append(commonPass, serverPass...))
+	commonAll := lib.RemoveDuplicateElement(append(commonCustom, serviceCustom...))
 
 	for _, line := range commonAll {
 		arr := strings.Split(line, ":")
 		dictUserPass = append(dictUserPass, DictUserPass{arr[0], arr[1]})
 	}
 	// if custom, only return custom dict
-	if selectDict == "custom"{
+	if onlyCustomDict {
 		return dictUserPass
 	}
 	for _, user := range userAll {

@@ -1,4 +1,4 @@
-module Goscanpro
+module github.com/F3eev/Goscanpro
 
 go 1.15
 

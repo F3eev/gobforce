@@ -13,7 +13,9 @@
 
 ```
 go run main.go -nFile nmapOutXml/123.56.102.89.xml
+go run main.go -nDir nmapOutXml
 
+go run main.go -nDir nmapOutXml -CustomDict
 ```
 
 - [x] FTP

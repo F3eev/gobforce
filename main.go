@@ -1,10 +1,10 @@
 package main
 
 import (
-	"Goscanpro/lib/nmapxml"
-	"Goscanpro/scan"
 	"flag"
 	"fmt"
+	"github.com/F3eev/Goscanpro/lib/nmapxml"
+	"github.com/F3eev/Goscanpro/scan"
 	"io/ioutil"
 )
 
@@ -33,12 +33,12 @@ func loadNmap(file string) ([]nmapResult, error) {
 
 func main() {
 
-	argThreads := flag.Int("threads", 500, "thread num default 400")
+	argThreads := flag.Int("threads", 400, "thread num default 400")
 	argNmapFile := flag.String("nFile", "", "nmap xml file")
 	argTimeOut := flag.Int("timeout", 5, "timeout")
-	argNmapDir := flag.String("nDir", "nmapOutXml", "nmap xml file")
-	argDict := flag.String("dict", "", "custom only for *_custom dict")
-	argSelectService := flag.String("service", "all", "selecting service to scan")
+	argNmapDir := flag.String("nDir", "", "nmap xml file")
+	argOnlyCustomDict := flag.Bool("CustomDict", false, "only use *_custom dict (default false)")
+	argSelectService := flag.String("service", "all", "choose service to scan")
 	argLog := flag.String("log", "log.txt", "log file")
 
 	flag.Parse()
@@ -65,8 +65,12 @@ func main() {
 	for _, t := range nmapResultXmlList {
 		targets = append(targets, scan.Target{IP: t.IP, Port: t.Port, Service: t.Service})
 	}
+	if len(targets) == 0 {
+		flag.Usage()
+		return
+	}
 
-	v := scan.Init(*argThreads, *argSelectService, *argDict, *argLog, *argTimeOut)
+	v := scan.Init(*argThreads, *argSelectService, *argOnlyCustomDict, *argLog, *argTimeOut)
 	//targets = append(targets, scan.Target{IP: "47.1.1.1", Port: "22", Service: "ssh"})
 
 	v.BruteForce(targets)
