@@ -7,15 +7,26 @@
 
 ## setup
 
-1，安装rustscan
+1，安装nmap,rustscan
 2，运行scan.sh开始扫描并保持扫描结果Xml
 3，运行Goscanpro读取XMl 并进行扫描
 
-```
-go run main.go -nFile nmapOutXml/123.56.102.89.xml
-go run main.go -nDir nmapOutXml
+### start
 
-go run main.go -nDir nmapOutXml -CustomDict
+运行脚本使用rustscan扫描./ip.txt文件中ip，out目录为nmap输出结果目录
+
+```
+./scan.sh
+
+```
+扫描服务弱口令
+
+```
+扫面目标
+go run main.go -nFile out/123.56.102.89.xml
+go run main.go -nDir out
+使用自定义字典
+go run main.go -nDir out -CustomDict
 ```
 
 - [x] FTP
@@ -35,6 +46,7 @@ go run main.go -nDir nmapOutXml -CustomDict
 
 ### 2022.2.11
 int
-
+### 2022.2.16
+update
 
 
