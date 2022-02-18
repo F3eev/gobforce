@@ -23,22 +23,9 @@ var supportedCiphers = []string{
 	gcmCipherID,
 }
 
-//func (t *Target) SSHLogin(args ...interface{}) bool {
-//	log.Println(t.IP)
-//	//ip:=lib.InterToString(value[0])
-//	//port:=lib.InterToString(value[1])
-//	//username :=lib.InterToString(value[2])
-//	//password :=lib.InterToString(value[3])
-//	////println(ip,port,username,password)
-//	return true
-//}
 func (t *Target) SSHLogin() bool {
-	//log.Fatal("sshLogin")
+	debugMessage := fmt.Sprintf("%s %s %s:%s", RunFileName(), RunFuncName(), t.IP, t.Port)
 
-	//ip := t.IP
-	//port := t.Port
-	//username := t.Username
-	//password := t.Password
 	var (
 		auth         []ssh.AuthMethod
 		addr         string
@@ -66,20 +53,16 @@ func (t *Target) SSHLogin() bool {
 
 	// connet to ssh
 	addr = fmt.Sprintf("%s:%s", t.IP, t.Port)
-
 	if client, err = ssh.Dial("tcp", addr, clientConfig); err != nil {
-		//log.Print("用户名：", username, "    密码: ", password, "      ", err.Error())
+		t.Logrus.Debug(fmt.Sprintf("%s %v", debugMessage, err))
 		return false
 	}
 
 	// create session
 	if session, err = client.NewSession(); err != nil {
-		//log.Print("用户名：", username, "    密码: ", password, "      ", err.Error())
+		t.Logrus.Debug(fmt.Sprintf("%s %v", debugMessage, err))
 		return false
 	}
 	session.Close()
-	//log.Print("用户名：", username, "    密码: ", password, "     sssss ")
-
-	//define.Output(value)
 	return true
 }

@@ -1,11 +1,14 @@
 package scan
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/F3eev/gobfroce/brute"
 	"github.com/F3eev/gobfroce/lib"
+	"github.com/cheggaaa/pb/v3"
 	"github.com/panjf2000/ants"
+	logrus "github.com/sirupsen/logrus"
 	"io"
-	"log"
 	"net"
 	"os"
 	"strings"
@@ -17,7 +20,7 @@ type VScan struct {
 	serviceDictFunction map[string]ServiceDictFunction
 	serviceAction       []string
 	threadNum           int
-	Logger              *log.Logger
+	Logrus              *logrus.Logger
 	timeout             int
 }
 
@@ -41,23 +44,25 @@ type ScanPar struct {
 	Function string
 	Username string
 	Password string
+	Logrus   *logrus.Logger
 }
 
 var expList = map[string][]string{
-	"ssh":        {"SSHLogin"},
-	"ftp":        {"FTPLogin"},
-	"mongodb":    {"MongoLogin"},
-	"mysql":      {"MysqlLogin"},
-	"postgresql": {"PostgresLogin"},
-	//"ms-wbt-server": {"RdpLogin"},
-	"redis": {"RedisLogin"},
-	"vnc":   {"VNCLoginNoUser"},
+	"ssh":           {"SSHLogin"},
+	"ftp":           {"FTPLogin"},
+	"mongodb":       {"MongoLogin"},
+	"mysql":         {"MysqlLogin"},
+	"postgresql":    {"PostgresLogin"},
+	"ms-wbt-server": {"RdpLogin"},
+	"redis":         {"RedisLogin"},
+	"vnc":           {"VNCLoginNoUser"},
 }
 
 func getDefaultService() (services []string) {
 	for s, _ := range expList {
 		services = append(services, s)
 	}
+
 	return services
 }
 
@@ -85,28 +90,59 @@ func filterService(ArgServices string) []string {
 	return scanServiceList
 }
 
-func Init(threadNum int, services string, onlyCustomDict bool, logfile string, timeout int) *VScan {
+type MyFormatter struct {
+	Prefix string
+	Suffix string
+}
+
+func (mf *MyFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+	var b *bytes.Buffer
+	if entry.Buffer != nil {
+		b = entry.Buffer
+	} else {
+		b = &bytes.Buffer{}
+	}
+
+	timestamp := time.Now().Local().Format("2006/1/02 15:04")
+
+	b.WriteString(fmt.Sprintf("%s%s:  - %s\n", mf.Prefix, timestamp, entry.Message))
+	return b.Bytes(), nil
+}
+
+func Init(threadNum int, services string, onlyCustomDict bool, logfile string, timeout int, level int) *VScan {
+
+	var levelFlag logrus.Level
+	if level == 2 {
+		levelFlag = logrus.DebugLevel
+	} else if level == 1 {
+		levelFlag = logrus.InfoLevel
+	}
+
+	log := logrus.New()
+	log.SetLevel(levelFlag)
+	formatter := &MyFormatter{
+		Prefix: "[gobfroce]",
+	}
+	log.SetFormatter(formatter)
 	logFile, err := os.OpenFile(logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0766)
 	if err != nil {
-		log.Printf(":Logfile %s %s\n", logfile, err.Error())
+		log.Error("Logfile %s %s\n", logfile, err.Error())
 	}
-	//defer logFile.Close()
-	fileAndPrint := io.MultiWriter(logFile, os.Stdout)
-	logger := log.New(fileAndPrint, "[BruteForce]", log.LstdFlags)
+	log.SetOutput(io.MultiWriter(logFile, os.Stdout))
 	serviceDictFunction := make(map[string]ServiceDictFunction)
 	scanService := filterService(services)
-	logger.Printf(":Staring scan thread %d can service:%v ", threadNum, scanService)
+	log.Printf("Staring scan thread %d can service:%v ", threadNum, scanService)
 
 	for _, service := range scanService {
 		for _, fun := range expList[service] {
 			dict := loadExpDict(service, onlyCustomDict)
-			logger.Printf(":Load %s dict %d", service, len(dict))
+			log.Printf("Load %s dict %d", service, len(dict))
 			factor := ServiceDictFunction{service, dict, fun}
 			serviceDictFunction[service] = factor
 		}
 	}
 
-	return &VScan{serviceDictFunction, scanService, threadNum, logger, timeout}
+	return &VScan{serviceDictFunction, scanService, threadNum, log, timeout}
 }
 
 func loadExpDict(name string, onlyCustomDict bool) []DictUserPass {
@@ -143,7 +179,7 @@ func loadExpDict(name string, onlyCustomDict bool) []DictUserPass {
 	return dictUserPass
 }
 
-func checkOpen(target Target) bool {
+func (v *VScan) checkOpen(target Target) bool {
 
 	connection, err := net.DialTimeout("tcp", target.IP+":"+target.Port, 5*time.Second)
 	if err != nil {
@@ -156,44 +192,49 @@ func checkOpen(target Target) bool {
 func (v *VScan) BruteForce(targets []Target) {
 
 	t1 := time.Now()
-
-	v.Logger.Printf(":Target:%d", len(targets))
+	bar := pb.New(len(targets))
+	bar.Start()
+	v.Logrus.Printf("Target:%d", len(targets))
 	var wg sync.WaitGroup
 	p, _ := ants.NewPoolWithFunc(v.threadNum, func(i interface{}) {
 		scanPar := i.(ScanPar)
-		bruteExp := brute.Target{IP: scanPar.Target.IP, Port: scanPar.Target.Port, Username: scanPar.Username, Password: scanPar.Password}
+		bruteExp := brute.Target{IP: scanPar.Target.IP, Port: scanPar.Target.Port, Username: scanPar.Username, Password: scanPar.Password, Logrus: scanPar.Logrus}
 		result, err := bruteExp.CallFunc(scanPar.Function)
 		if err == nil {
 			status := result[0].Bool()
 			if status == true {
-				//	success [1;40;32m0x1B0x1B
-				v.Logger.Printf(":%c[1;40;32m%s %s %s:%s  (%s:%s) Success%c[0m", 0x1B, scanPar.Target.Service, scanPar.Function, scanPar.Target.IP, scanPar.Target.Port, scanPar.Username, scanPar.Password, 0x1B)
-
+				v.Logrus.Info(fmt.Sprintf("%c[1;40;32m%s %s %s:%s (%s:%s) successful %c[0m", 0x1B, scanPar.Target.Service, scanPar.Function, scanPar.Target.IP, scanPar.Target.Port, scanPar.Username, scanPar.Password, 0x1B))
 			} else {
-				v.Logger.Printf(":%s %s %s:%s (%s:%s) Fail", scanPar.Target.Service, scanPar.Function, scanPar.Target.IP, scanPar.Target.Port, scanPar.Username, scanPar.Password)
+				message := fmt.Sprintf("%s %s %s:%s (%s:%s) Fail", scanPar.Target.Service, scanPar.Function, scanPar.Target.IP, scanPar.Target.Port, scanPar.Username, scanPar.Password)
+				v.Logrus.Info(message)
 			}
 		}
+
 		wg.Done()
 	})
 	defer p.Release()
 
 	for _, target := range targets {
-		if checkOpen(target) {
+		bar.Increment()
+		if v.checkOpen(target) {
 			_, ok := v.serviceDictFunction[target.Service]
 			if ok {
+				v.Logrus.Printf("Start brute %s:%s %s ", target.IP, target.Port, target.Service)
+
 				for _, userPass := range v.serviceDictFunction[target.Service].DictUserPass {
-					scanPar := ScanPar{target, v.serviceDictFunction[target.Service].Function, userPass.Username, userPass.Password}
+					scanPar := ScanPar{target, v.serviceDictFunction[target.Service].Function, userPass.Username, userPass.Password, v.Logrus}
 					wg.Add(1)
 					_ = p.Invoke(scanPar)
 				}
 			} else {
-				v.Logger.Printf(":%s %s:%s is unable to hit", target.Service, target.IP, target.Port)
+				v.Logrus.Printf("%s %s:%s is unable to hit", target.Service, target.IP, target.Port)
 			}
 		} else {
-			v.Logger.Printf(":%s %s:%s is not open", target.Service, target.IP, target.Port)
+			v.Logrus.Printf("%s %s:%s is not open", target.Service, target.IP, target.Port)
 		}
 	}
 	wg.Wait()
+	bar.Finish()
 	elapsed := time.Since(t1)
-	v.Logger.Printf("Finish scan %s", elapsed)
+	v.Logrus.Printf("Finish scan %s", elapsed)
 }

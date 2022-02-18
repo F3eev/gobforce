@@ -1,2 +1,1 @@
-root:123456
-root:Password
+mysql:123456

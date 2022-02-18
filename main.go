@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/F3eev/Goscanpro/lib/nmapxml"
-	"github.com/F3eev/Goscanpro/scan"
+	"github.com/F3eev/gobfroce/lib/nmapxml"
+	"github.com/F3eev/gobfroce/scan"
 	"io/ioutil"
 )
 
@@ -40,8 +40,10 @@ func main() {
 	argOnlyCustomDict := flag.Bool("CustomDict", false, "only use *_custom dict (default false)")
 	argSelectService := flag.String("service", "all", "choose service to scan")
 	argLog := flag.String("log", "log.txt", "log file")
+	argLevel := flag.Int("level", 2, "log file")
 
 	flag.Parse()
+
 	var nmapResultXmlList []nmapResult
 	var nmapOutFileList []string
 	var targets []scan.Target
@@ -70,9 +72,12 @@ func main() {
 		return
 	}
 
-	v := scan.Init(*argThreads, *argSelectService, *argOnlyCustomDict, *argLog, *argTimeOut)
-	//targets = append(targets, scan.Target{IP: "47.1.1.1", Port: "22", Service: "ssh"})
-
+	v := scan.Init(*argThreads, *argSelectService, *argOnlyCustomDict, *argLog, *argTimeOut, *argLevel)
+	//targets = append(targets, scan.Target{IP: "127.0.0.1", Port: "27017", Service: "mongodb"})
+	//
+	//targets = append(targets, scan.Target{IP: "127.0.0.1", Port: "277", Service: "mongodb"})
+	////
+	//targets = append(targets, scan.Target{IP: "127.0.0.1", Port: "27017", Service: "x"})
 	v.BruteForce(targets)
 
 }

@@ -18,3 +18,5 @@ initadmin
 backup
 superadmin
 username
+Test
+User

@@ -1,1 +1,1 @@
-cususer:cuspass
+anonymous:anonymous
